@@ -47,10 +47,14 @@ export const removeTodo = async (req: Request, res: Response) => {
 };
 
 export const getTodo = async (req: Request, res: Response) => {
+  console.log("I was called..");
+  
   const { userId } = req.body;
 
   const { data, error } = await supabase.from("todo").select().eq('user_id',userId);
   if (data) {
+    console.log("Data is : ",data);
+    
     return res.status(200).json({
       data: data,
     });
