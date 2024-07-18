@@ -1,5 +1,4 @@
 const supabase = require("../shared/db/config");
-import { log } from "console";
 import { Request, Response } from "express";
 
 export const signup = async (req: Request, res: Response) => {
@@ -34,6 +33,6 @@ export const login = async (req: Request, res: Response) => {
 };
 export const logout = async (req: Request, res: Response) => {
   const { error } = await supabase.auth.signOut();
-  if (!error) return res.status(200);
+  if (!error) return res.status(200).json({message:"logged out successfully"});
   return res.status(400).json({ error: "Couldn't sing out" });
 };
