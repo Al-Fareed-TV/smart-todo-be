@@ -1,13 +1,25 @@
 const supabase = require("../shared/db/config");
 import { Request, Response } from "express";
+import index from "../shared/db/faiss.db";
+import { FaissStore } from "@langchain/community/vectorstores/faiss";
+import { Document } from "@langchain/core/documents";
+import { OpenAIEmbeddings } from "@langchain/openai";
+import dotenv from "dotenv";
+dotenv.config();
 export const addTodo = async (req: Request, res: Response) => {
   const { userId, todo, priority, isDone } = await req.body;
-  const { error } = await supabase.from("todo").insert({
-    user_id: userId,
-    todo: todo,
-    priority: priority,
-    isDone: isDone,
-  });
+  const error = null;
+
+  const data = {
+    userId,
+    todo,
+    priority,
+    isDone,
+    pageContent: `This todo - ${todo} has ${priority} priority`, // You need to decide what to include in pageContent
+  };
+
+  const records = await index.addDocuments([new Document(data)]);
+  await index.save('../vectorDB')
 
   if (error) {
     return res.status(400).json({
@@ -16,6 +28,7 @@ export const addTodo = async (req: Request, res: Response) => {
   }
   return res.status(201).json({
     message: "Created a new todo successfully",
+    data:records
   });
 };
 export const updateTodo = async (req: Request, res: Response) => {
@@ -47,16 +60,21 @@ export const removeTodo = async (req: Request, res: Response) => {
 };
 
 export const getTodo = async (req: Request, res: Response) => {
-  console.log("I was called..");
-  
   const { userId } = req.body;
-
-  const { data, error } = await supabase.from("todo").select().eq('user_id',userId);
-  if (data) {
-    console.log("Data is : ",data);
-    
+const dir = "../vectorDB";
+  // const { data, error } = await supabase.from("todo").select().eq('user_id',userId);
+const loadedVectorStore = await FaissStore.load(
+  dir,
+  new OpenAIEmbeddings({ apiKey: process.env.OPENAI_API_KEY! })
+);
+  // const data = null;
+  const result = await loadedVectorStore.similaritySearch("Ka karein", 1, {
+    userId,
+  });
+  const error = "";
+  if (loadedVectorStore) {
     return res.status(200).json({
-      data: data,
+      data: result,
     });
   }
   return res.status(400).json({
